@@ -1,1 +1,1 @@
-## gallary grabber
+## Grabbing images from web gallary
