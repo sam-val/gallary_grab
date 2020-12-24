@@ -1,4 +1,5 @@
 import requests
+from requests_html import HTMLSession
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
 from urllib.parse import urljoin, urlparse
@@ -15,24 +16,31 @@ def grab_all(url):
     Get all imgs from a URL
     """
 
+    session = HTMLSession()
+    r = session.get(url)
+    r.html.render()
     # find all the imgs tags
     urls = []
-    soup = bs(requests.get(url).content, "html.parser")
-    for img in soup.find_all("img"):
+    soup = bs(r.html.html, "html.parser")
+    divs = soup.find_all("div", {"class": "carousel-item"})
+    imgs = [div.findChilren("img") for div in divs]
+    for img in imgs:
         img_url = img.attrs.get("src")
         # select the ones with src attribute, grabs it
         if img_url:
-            # append it with the domain to get the absolute path
+            # check if it's already absolute, it not...
+            if not is_valid(img_url):
+                # append it with the domain to get the absolute path
 
-            img_url = urljoin(url, img_url)
+                img_url = urljoin(url, img_url)
 
-            # remove query strings, e.g. "google.com/seach?sam=True"
-            try:
-                query_pos = img_url.index("?")
+                # remove query strings, e.g. "google.com/seach?sam=True"
+                try:
+                    query_pos = img_url.index("?")
 
-                img_url = img_url[:query_pos]
-            except ValueError:
-                pass
+                    img_url = img_url[:query_pos]
+                except ValueError:
+                    pass
 
             # check if it's an valid url
             if is_valid(img_url):
@@ -49,7 +57,9 @@ def grab_gallary_img():
     pass
 
 def main():
-    url = sys.argv[1]
+    # url = sys.argv[1]
+    url = "https://mobirise.com/bootstrap-gallery/htmlimagegallery.html"
+    url2 = ""
     download_path = os.path.realpath(".")
     img_urls = grab_all(url)
     
