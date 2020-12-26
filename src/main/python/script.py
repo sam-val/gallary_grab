@@ -23,8 +23,9 @@ def grab_all(url):
     urls = []
     soup = bs(r.html.html, "html.parser")
     divs = soup.find_all("div", {"class": "carousel-item"})
-    imgs = [div.findChilren("img") for div in divs]
-    for img in imgs:
+    
+    imgs = [div.find("img") for div in divs]
+    for img in  imgs:
         img_url = img.attrs.get("src")
         # select the ones with src attribute, grabs it
         if img_url:
@@ -46,12 +47,33 @@ def grab_all(url):
             if is_valid(img_url):
                 urls.append(img_url)
 
-
+    # close session:
+    session.close()
     return urls
 
 
-def download(urls, folder_path):
-    pass
+def download(url, folder_path):
+    """
+    folder_path should be a realpath when passed in
+    """
+    # if folder path doesn't exist, make one:
+    if not os.path.isdir(folder_path):
+        os.mkdir(folder_path)
+
+    # download the content in chunks:
+    r = requests.get(url, stream=True, timeout=10)
+
+    # make the file name, aka grabbing it:
+    file_path = os.path.join(folder_path, url.split("/")[-1])
+
+    # optional: get file size:
+    file_size = r.headers.get("content-length", 0)
+    print(file_size)
+
+    # exact the reponse content to a file
+    with open(file_path, "wb") as f:
+        for data_chunk in r.iter_content(1024):
+            f.write(data_chunk)
 
 def grab_gallary_img():
     pass
@@ -60,11 +82,13 @@ def main():
     # url = sys.argv[1]
     url = "https://mobirise.com/bootstrap-gallery/htmlimagegallery.html"
     url2 = ""
-    download_path = os.path.realpath(".")
+    download_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "img_folder")
     img_urls = grab_all(url)
-    
     for i in img_urls:
         print(i)
+    for img_url in img_urls:
+        download(img_url, download_path)
+    
 
 if __name__ == "__main__":
     main()
